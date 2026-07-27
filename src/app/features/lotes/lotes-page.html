@@ -1,0 +1,196 @@
+<h1>Cadastro de lote de recebíveis</h1>
+<p class="descricao">
+  A operação é tudo-ou-nada: um recebível inválido faz rollback do lote inteiro. Cada item
+  criado gera uma precificação, que pode ser liquidada em seguida.
+</p>
+
+@if (service.loteCriado(); as lote) {
+  <mat-card class="card-lote-criado">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon class="icone-sucesso">check_circle</mat-icon>
+        Lote #{{ lote.id }} criado — {{ lote.dsReferencia }}
+      </mat-card-title>
+      <mat-card-subtitle>
+        {{ lote.cedenteNome }} · {{ lote.cedenteDocumento }} ·
+        {{ lote.dtCriacao | date: 'dd/MM/yyyy HH:mm' }}
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <table mat-table [dataSource]="lote.itens">
+        <ng-container matColumnDef="nrTitulo">
+          <th mat-header-cell *matHeaderCellDef>Título</th>
+          <td mat-cell *matCellDef="let item">{{ item.nrTitulo }}</td>
+        </ng-container>
+        <ng-container matColumnDef="precificacaoId">
+          <th mat-header-cell *matHeaderCellDef>Precificação</th>
+          <td mat-cell *matCellDef="let item">#{{ item.precificacaoId }}</td>
+        </ng-container>
+        <ng-container matColumnDef="vlFace">
+          <th mat-header-cell *matHeaderCellDef class="col-valor">Valor de face</th>
+          <td mat-cell *matCellDef="let item" class="col-valor valor">
+            {{ item.vlFace | currency: item.sgMoeda }}
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="vlLiquido">
+          <th mat-header-cell *matHeaderCellDef class="col-valor">Valor líquido</th>
+          <td mat-cell *matCellDef="let item" class="col-valor valor">
+            {{ item.vlLiquido | currency: item.sgMoeda }}
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="vlConvertido">
+          <th mat-header-cell *matHeaderCellDef class="col-valor">Convertido</th>
+          <td mat-cell *matCellDef="let item" class="col-valor valor">
+            @if (item.sgMoeda !== item.sgMoedaPagamento && item.vlConvertido !== null) {
+              {{ item.vlConvertido | currency: item.sgMoedaPagamento }}
+            } @else {
+              —
+            }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="qtPrazoDia">
+          <th mat-header-cell *matHeaderCellDef class="col-valor">Prazo</th>
+          <td mat-cell *matCellDef="let item" class="col-valor">{{ item.qtPrazoDia }} d</td>
+        </ng-container>
+        <ng-container matColumnDef="acoes">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let item">
+            <button matButton="filled" (click)="liquidar(item.precificacaoId)">
+              Liquidar
+            </button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="colunasItens"></tr>
+        <tr mat-row *matRowDef="let row; columns: colunasItens"></tr>
+      </table>
+    </mat-card-content>
+    <mat-card-actions>
+      <button matButton (click)="novoLote()">
+        <mat-icon>add</mat-icon>
+        Cadastrar outro lote
+      </button>
+    </mat-card-actions>
+  </mat-card>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="criarLote()">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Dados do lote</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="grade-lote">
+          <mat-form-field appearance="outline" class="campo-referencia">
+            <mat-label>Referência</mat-label>
+            <input matInput formControlName="dsReferencia" placeholder="Lote julho/2026" />
+            <mat-error>Informe a referência do lote.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cedente</mat-label>
+            <input matInput formControlName="cedenteNome" placeholder="ACME LTDA" />
+            <mat-error>Informe o nome do cedente.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>CNPJ do cedente</mat-label>
+            <input matInput formControlName="cedenteDocumento" placeholder="11.222.333/0001-81" />
+            @if (form.controls.cedenteDocumento.hasError('required')) {
+              <mat-error>Informe o CNPJ.</mat-error>
+            } @else if (form.controls.cedenteDocumento.hasError('cnpj')) {
+              <mat-error>CNPJ com dígito verificador inválido.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Taxa base (a.m.)</mat-label>
+            <input matInput type="number" min="0" step="0.001" formControlName="vlTaxaBase" />
+            <mat-error>Informe a taxa base.</mat-error>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="card-recebiveis">
+      <mat-card-header>
+        <mat-card-title>Recebíveis ({{ recebiveis.length }})</mat-card-title>
+      </mat-card-header>
+      <mat-card-content formArrayName="recebiveis">
+        @for (recebivel of recebiveis.controls; track recebivel; let i = $index) {
+          <div class="linha-recebivel" [formGroupName]="i">
+            <mat-form-field appearance="outline">
+              <mat-label>Nº do título</mat-label>
+              <input matInput formControlName="nrTitulo" placeholder="DUP-001" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Valor de face</mat-label>
+              <input matInput type="number" min="0" step="100" formControlName="vlFace" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Vencimento</mat-label>
+              <input
+                matInput
+                [matDatepicker]="picker"
+                [min]="amanha"
+                formControlName="dtVencimento"
+              />
+              <mat-datepicker-toggle matIconSuffix [for]="picker" />
+              <mat-datepicker #picker />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="campo-tipo">
+              <mat-label>Tipo</mat-label>
+              <mat-select formControlName="tipoRecebivel">
+                @for (tipo of tiposRecebivel; track tipo) {
+                  <mat-option [value]="tipo">{{ tipo }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="campo-moeda">
+              <mat-label>Moeda</mat-label>
+              <mat-select formControlName="sgMoeda">
+                @for (moeda of moedas; track moeda) {
+                  <mat-option [value]="moeda">{{ moeda }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="campo-moeda">
+              <mat-label>Pagamento</mat-label>
+              <mat-select formControlName="sgMoedaPagamento">
+                @for (moeda of moedas; track moeda) {
+                  <mat-option [value]="moeda">{{ moeda }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <button
+              matIconButton
+              type="button"
+              aria-label="Remover recebível"
+              [disabled]="recebiveis.length === 1"
+              (click)="removerRecebivel(i)"
+            >
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+        }
+
+        <button matButton type="button" (click)="adicionarRecebivel()">
+          <mat-icon>add</mat-icon>
+          Adicionar recebível
+        </button>
+      </mat-card-content>
+      <mat-card-actions align="end">
+        <button matButton="filled" type="submit" [disabled]="service.criando()">
+          @if (service.criando()) {
+            <mat-spinner diameter="18" />
+          }
+          Criar lote
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </form>
+}

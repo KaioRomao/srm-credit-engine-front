@@ -1,0 +1,59 @@
+h1 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.descricao {
+  margin: 0 0 20px;
+  color: #5b6270;
+  max-width: 640px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1080px;
+}
+
+.grade-lote {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px 16px;
+  padding-top: 12px;
+}
+
+.card-recebiveis mat-card-content {
+  padding-top: 12px;
+}
+
+.linha-recebivel {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1.1fr 1.5fr 0.7fr 0.7fr auto;
+  gap: 4px 12px;
+  align-items: center;
+}
+
+.card-lote-criado {
+  max-width: 1080px;
+
+  .icone-sucesso {
+    color: #0d7a5f;
+    vertical-align: -4px;
+    margin-right: 6px;
+  }
+
+  table {
+    width: 100%;
+    margin-top: 8px;
+  }
+}
+
+.col-valor {
+  text-align: right;
+}
+
+mat-card-actions button mat-spinner {
+  display: inline-block;
+  margin-right: 8px;
+}
