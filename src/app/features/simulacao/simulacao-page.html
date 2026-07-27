@@ -1,0 +1,112 @@
+<h1>Simulação de precificação</h1>
+<p class="descricao">
+  O resultado é recalculado automaticamente conforme os campos são preenchidos. Nada é
+  persistido — a precificação definitiva acontece na criação do lote.
+</p>
+
+<div class="painel">
+  <mat-card class="card-form">
+    <mat-card-content>
+      <form [formGroup]="form">
+        <mat-form-field appearance="outline">
+          <mat-label>Valor de face</mat-label>
+          <input matInput type="number" min="0" step="100" formControlName="vlFace" />
+          <mat-error>Informe um valor de face positivo.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Vencimento</mat-label>
+          <input
+            matInput
+            [matDatepicker]="picker"
+            [min]="amanha"
+            formControlName="dtVencimento"
+          />
+          <mat-datepicker-toggle matIconSuffix [for]="picker" />
+          <mat-datepicker #picker />
+          <mat-error>Informe uma data futura.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de recebível</mat-label>
+          <mat-select formControlName="tipoRecebivel">
+            @for (tipo of tiposRecebivel; track tipo) {
+              <mat-option [value]="tipo">{{ tipo }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Taxa base (a.m.)</mat-label>
+          <input matInput type="number" min="0" step="0.001" formControlName="vlTaxaBase" />
+          <mat-hint>Ex.: 0,01 = 1% ao mês</mat-hint>
+          <mat-error>Informe a taxa base.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Moeda do título</mat-label>
+          <mat-select formControlName="sgMoeda">
+            @for (moeda of moedas; track moeda) {
+              <mat-option [value]="moeda">{{ moeda }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Moeda de pagamento</mat-label>
+          <mat-select formControlName="sgMoedaPagamento">
+            @for (moeda of moedas; track moeda) {
+              <mat-option [value]="moeda">{{ moeda }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>Diferente da moeda do título = cross-currency (exige câmbio sincronizado)</mat-hint>
+        </mat-form-field>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="card-resultado">
+    <mat-card-content>
+      @if (carregando()) {
+        <div class="estado-vazio">
+          <mat-spinner diameter="32" />
+          <span>Simulando…</span>
+        </div>
+      } @else if (resultado(); as rs) {
+        <span class="rotulo">Valor líquido ({{ rs.sgMoeda }})</span>
+        <span class="valor destaque">{{ rs.vlLiquido | currency: rs.sgMoeda }}</span>
+
+        @if (crossCurrency() && rs.vlConvertido !== null) {
+          <span class="rotulo">Convertido para {{ rs.sgMoedaPagamento }}</span>
+          <span class="valor destaque-secundario">
+            {{ rs.vlConvertido | currency: rs.sgMoedaPagamento }}
+          </span>
+        }
+
+        <div class="detalhes">
+          <div>
+            <span class="rotulo">Valor de face</span>
+            <span class="valor">{{ rs.vlFace | currency: rs.sgMoeda }}</span>
+          </div>
+          <div>
+            <span class="rotulo">Deságio</span>
+            <span class="valor">{{ spread() | currency: rs.sgMoeda }}</span>
+          </div>
+          <div>
+            <span class="rotulo">Prazo</span>
+            <span class="valor">{{ rs.qtPrazoDia | number }} dias</span>
+          </div>
+          <div>
+            <span class="rotulo">Tipo</span>
+            <span>{{ rs.tipoRecebivel }}</span>
+          </div>
+        </div>
+      } @else {
+        <div class="estado-vazio">
+          <mat-icon>calculate</mat-icon>
+          <span>Preencha o formulário para ver o resultado da simulação.</span>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>
