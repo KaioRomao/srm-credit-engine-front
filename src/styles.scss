@@ -1,1 +1,70 @@
-/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
+
+:root {
+  color-scheme: light;
+
+  @include mat.theme((
+    color: (
+      primary: mat.$azure-palette,
+      tertiary: mat.$spring-green-palette,
+    ),
+    typography: (
+      plain-family: 'Inter, sans-serif',
+      brand-family: 'Inter, sans-serif',
+    ),
+    density: -2,
+  ));
+
+  // Azul-marinho corporativo no lugar do azure padrão do M3
+  --mat-sys-primary: #24408e;
+  --mat-sys-on-primary: #ffffff;
+  --mat-sys-primary-container: #dbe2f6;
+  --mat-sys-on-primary-container: #16295e;
+  --mat-sys-secondary: #444a55;
+  --mat-sys-on-secondary: #ffffff;
+  --mat-sys-secondary-container: #e2e6ee;
+  --mat-sys-on-secondary-container: #2e343e;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: #f4f5f7;
+  color: #1f2430;
+  font: 400 14px/20px Inter, sans-serif;
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+}
+
+// Valores monetários: casas decimais alinhadas
+.valor {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.mat-mdc-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 12%) !important;
+}
+
+table.mat-mdc-table {
+  font-variant-numeric: tabular-nums;
+
+  .mat-mdc-header-cell {
+    font-weight: 600;
+    color: #444a55;
+  }
+}
+
+.snack-erro {
+  --mat-snack-bar-container-color: #7f1d1d;
+  --mat-snack-bar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #fecaca;
+
+  .mat-mdc-snack-bar-label {
+    white-space: pre-line;
+  }
+}
