@@ -1,0 +1,22 @@
+<mat-toolbar class="toolbar" color="primary">
+  <mat-icon>account_balance_wallet</mat-icon>
+  <span class="titulo">SRM Credit Engine</span>
+  <span class="subtitulo">Mesa de operações · FIDC multimoedas</span>
+</mat-toolbar>
+
+<mat-sidenav-container class="container">
+  <mat-sidenav mode="side" opened class="sidenav">
+    <mat-nav-list>
+      @for (item of itensMenu; track item.rota) {
+        <a mat-list-item [routerLink]="item.rota" routerLinkActive="ativo">
+          <mat-icon matListItemIcon>{{ item.icone }}</mat-icon>
+          <span matListItemTitle>{{ item.titulo }}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="conteudo">
+    <router-outlet />
+  </mat-sidenav-content>
+</mat-sidenav-container>
