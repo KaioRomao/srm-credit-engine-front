@@ -1,0 +1,108 @@
+<h1>Câmbio</h1>
+<p class="descricao">
+  Sincronizar a cotação de um par é pré-requisito das operações cross-currency. A taxa
+  inversa é calculada automaticamente pelo backend (1/taxa).
+</p>
+
+<div class="painel">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Sincronizar cotação</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="formSincronizar" (ngSubmit)="sincronizar()">
+        <mat-form-field appearance="outline">
+          <mat-label>Data de fechamento</mat-label>
+          <input matInput [matDatepicker]="picker" [max]="hoje" formControlName="data" />
+          <mat-datepicker-toggle matIconSuffix [for]="picker" />
+          <mat-datepicker #picker />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Origem</mat-label>
+          <mat-select formControlName="origem">
+            @for (moeda of moedas; track moeda) {
+              <mat-option [value]="moeda">{{ moeda }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Destino</mat-label>
+          <mat-select formControlName="destino">
+            @for (moeda of moedas; track moeda) {
+              <mat-option [value]="moeda">{{ moeda }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <button matButton="filled" type="submit" [disabled]="service.sincronizando()">
+          @if (service.sincronizando()) {
+            <mat-spinner diameter="18" />
+          }
+          Sincronizar
+        </button>
+      </form>
+
+      @if (service.cotacaoSincronizada(); as cotacao) {
+        <div class="resultado">
+          <mat-icon class="icone-sucesso">check_circle</mat-icon>
+          <div>
+            <strong>Cotação #{{ cotacao.id }}</strong> —
+            1 {{ cotacao.sgMoedaOrigem }} =
+            <span class="valor">{{ cotacao.vlCambio | number: '1.4-6' }}</span>
+            {{ cotacao.sgMoedaDestino }}
+            <div class="detalhe">
+              Fechamento em {{ cotacao.dtFechamento | date: 'dd/MM/yyyy' }}
+            </div>
+          </div>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Consultar última cotação</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="formConsultar" (ngSubmit)="consultar()">
+        <mat-form-field appearance="outline">
+          <mat-label>Origem</mat-label>
+          <mat-select formControlName="origem">
+            @for (moeda of moedas; track moeda) {
+              <mat-option [value]="moeda">{{ moeda }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Destino</mat-label>
+          <mat-select formControlName="destino">
+            @for (moeda of moedas; track moeda) {
+              <mat-option [value]="moeda">{{ moeda }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <button matButton="filled" type="submit" [disabled]="service.consultando()">
+          @if (service.consultando()) {
+            <mat-spinner diameter="18" />
+          }
+          Consultar
+        </button>
+      </form>
+
+      @if (service.taxaConsultada(); as consulta) {
+        <div class="resultado">
+          <mat-icon>trending_up</mat-icon>
+          <div>
+            1 {{ consulta.origem }} =
+            <span class="valor destaque">{{ consulta.taxa | number: '1.4-6' }}</span>
+            {{ consulta.destino }}
+          </div>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>
