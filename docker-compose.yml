@@ -1,0 +1,16 @@
+services:
+  front:
+    build: .
+    container_name: srm-front
+    ports:
+      - "4200:80"
+    environment:
+      API_UPSTREAM: http://srm-app:8080
+    networks:
+      - backend
+
+networks:
+  # Rede criada pelo docker-compose do backend — suba o backend primeiro
+  backend:
+    name: srm-credit-engine_default
+    external: true
