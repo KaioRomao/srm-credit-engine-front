@@ -1,0 +1,252 @@
+<h1>Liquidação</h1>
+<p class="descricao">
+  Cada precificação pode ser liquidada uma única vez. O processamento é assíncrono: a
+  solicitação é aceita e o desfecho é acompanhado automaticamente abaixo.
+</p>
+
+<div class="painel">
+  <div class="coluna-forms">
+  <mat-card class="card-form">
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="solicitar()">
+        <mat-form-field appearance="outline">
+          <mat-label>ID da precificação</mat-label>
+          <input matInput type="number" min="1" formControlName="precificacaoId" />
+          <mat-hint>Obtido na criação do lote</mat-hint>
+          <mat-error>Informe o ID da precificação.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Moeda de liquidação</mat-label>
+          <mat-select formControlName="sgMoedaLiquidacao">
+            @for (moeda of moedas; track moeda) {
+              <mat-option [value]="moeda">{{ moeda }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <div class="track-id">
+          <span class="rotulo">TrackId (idempotência, gerado automaticamente)</span>
+          <code>{{ trackId() }}</code>
+        </div>
+
+        <button matButton="filled" type="submit" [disabled]="service.solicitando()">
+          @if (service.solicitando()) {
+            <mat-spinner diameter="18" />
+          }
+          Solicitar liquidação
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="card-form">
+    <mat-card-header>
+      <mat-card-title class="titulo-consulta">Consultar liquidação por ID</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="formConsulta" (ngSubmit)="consultar()" class="form-consulta">
+        <mat-form-field appearance="outline">
+          <mat-label>ID da liquidação</mat-label>
+          <input matInput type="number" min="1" formControlName="liquidacaoId" />
+          <mat-error>Informe o ID da liquidação.</mat-error>
+        </mat-form-field>
+
+        <button matButton="tonal" type="submit" [disabled]="service.consultando()">
+          @if (service.consultando()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <mat-icon>search</mat-icon>
+          }
+          Consultar
+        </button>
+      </form>
+      <p class="dica">
+        Se a liquidação ainda estiver pendente ou em processamento, o acompanhamento
+        automático é retomado.
+      </p>
+    </mat-card-content>
+  </mat-card>
+  </div>
+
+  @if (service.liquidacao(); as rs) {
+    <mat-card class="card-resultado">
+      <mat-card-header>
+        <mat-card-title>Liquidação #{{ rs.id }}</mat-card-title>
+        <app-status-badge [status]="rs.status" />
+      </mat-card-header>
+      <mat-card-content>
+        @if (service.acompanhando()) {
+          <p class="acompanhando">Consultando o desfecho a cada 3 segundos…</p>
+        }
+
+        <dl>
+          <div>
+            <dt>TrackId</dt>
+            <dd><code>{{ rs.trackId }}</code></dd>
+          </div>
+          <div>
+            <dt>Valor liquidado</dt>
+            <dd class="valor">
+              @if (rs.vlLiquidado !== null) {
+                {{ rs.vlLiquidado | currency: rs.sgMoedaLiquidacao }}
+              } @else {
+                Aguardando processamento…
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Câmbio aplicado</dt>
+            <dd class="valor">
+              @if (rs.vlCambioAplicado !== null) {
+                {{ rs.vlCambioAplicado | number: '1.4-6' }}
+              } @else {
+                —
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Data da liquidação</dt>
+            <dd>
+              @if (rs.dtLiquidacao !== null) {
+                {{ rs.dtLiquidacao | date: 'dd/MM/yyyy HH:mm:ss' }}
+              } @else {
+                —
+              }
+            </dd>
+          </div>
+          @if (rs.dsObservacao) {
+            <div>
+              <dt>Observação</dt>
+              <dd>{{ rs.dsObservacao }}</dd>
+            </div>
+          }
+        </dl>
+      </mat-card-content>
+      <mat-card-actions>
+        <button matButton (click)="novaSolicitacao()">
+          <mat-icon>add</mat-icon>
+          Nova solicitação
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  }
+</div>
+
+<mat-card class="card-lista">
+  <mat-card-header>
+    <mat-card-title class="titulo-consulta">Acompanhamento de liquidações</mat-card-title>
+    <button matIconButton aria-label="Atualizar lista" (click)="atualizarLista()">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </mat-card-header>
+  <mat-card-content>
+    <form [formGroup]="formFiltrosLista" (ngSubmit)="filtrarLista()" class="filtros-lista">
+      <mat-form-field appearance="outline" class="campo-id">
+        <mat-label>ID</mat-label>
+        <input matInput type="number" min="1" formControlName="id" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="campo-trackid">
+        <mat-label>TrackId</mat-label>
+        <input matInput formControlName="trackId" placeholder="3fa85f64-5717-…" />
+        <mat-error>Informe um UUID válido.</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="campo-status">
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="status">
+          <mat-option [value]="null">Todos</mat-option>
+          @for (status of statusDisponiveis; track status) {
+            <mat-option [value]="status">{{ status }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <button matButton="filled" type="submit">
+        <mat-icon>filter_alt</mat-icon>
+        Filtrar
+      </button>
+      <button matButton type="button" (click)="limparFiltrosLista()">Limpar</button>
+    </form>
+
+    @if (service.listando()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    <div class="rolagem">
+      <table
+        mat-table
+        [dataSource]="itensLista()"
+        matSort
+        (matSortChange)="mudarOrdenacaoLista($event)"
+      >
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+          <td mat-cell *matCellDef="let item">#{{ item.id }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="trackId">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>TrackId</th>
+          <td mat-cell *matCellDef="let item"><code>{{ item.trackId }}</code></td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+          <td mat-cell *matCellDef="let item">
+            <app-status-badge [status]="item.status" />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="vlLiquidado">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-valor">
+            Valor liquidado
+          </th>
+          <td mat-cell *matCellDef="let item" class="col-valor valor">
+            @if (item.vlLiquidado !== null) {
+              {{ item.vlLiquidado | currency: item.sgMoedaLiquidacao }}
+            } @else {
+              —
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="dtLiquidacao">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Data da liquidação</th>
+          <td mat-cell *matCellDef="let item">
+            @if (item.dtLiquidacao !== null) {
+              {{ item.dtLiquidacao | date: 'dd/MM/yyyy HH:mm' }}
+            } @else {
+              —
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acoes">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let item">
+            <button matButton (click)="verDetalhe(item.id)">Ver detalhe</button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="colunasLista"></tr>
+        <tr mat-row *matRowDef="let row; columns: colunasLista"></tr>
+
+        <tr class="mat-mdc-row sem-dados" *matNoDataRow>
+          <td class="mat-mdc-cell" [attr.colspan]="colunasLista.length">
+            Nenhuma liquidação encontrada para os filtros informados.
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="totalLista()"
+      [pageSize]="20"
+      [pageSizeOptions]="[10, 20, 50, 100]"
+      (page)="mudarPaginaLista($event)"
+      showFirstLastButtons
+    />
+  </mat-card-content>
+</mat-card>
+
