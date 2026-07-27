@@ -106,6 +106,19 @@ npm start          # http://localhost:4200
 | `npm test` | Testes unitários (Vitest) |
 | `npm run build` | Build de produção |
 
+### Execução com Docker
+
+Com o backend já em execução (`docker-compose up -d` no repositório dele):
+
+```bash
+docker-compose up -d --build   # http://localhost:4200
+```
+
+A imagem é construída em dois estágios (build Angular em Node 22 → nginx servindo os
+estáticos). O nginx cumpre em produção o mesmo papel do proxy de desenvolvimento:
+encaminha `/api` ao backend pela rede interna do Docker (`API_UPSTREAM`, padrão
+`http://srm-app:8080`) e devolve o `index.html` para qualquer rota da SPA.
+
 ## Fluxo de contribuição
 
 - Branch `development` para o trabalho contínuo; `main` recebe mudanças exclusivamente
