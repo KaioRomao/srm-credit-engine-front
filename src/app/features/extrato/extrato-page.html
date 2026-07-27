@@ -1,0 +1,136 @@
+<h1>Extrato de liquidações</h1>
+<p class="descricao">
+  Relatório do dinheiro efetivamente liquidado — apenas liquidações com status LIQUIDADA
+  entram aqui. Paginação e ordenação são resolvidas no servidor.
+</p>
+
+<mat-card class="card-filtros">
+  <mat-card-content>
+    <form [formGroup]="formFiltros" (ngSubmit)="aplicarFiltros()">
+      <mat-form-field appearance="outline">
+        <mat-label>Período</mat-label>
+        <mat-date-range-input [rangePicker]="pickerPeriodo">
+          <input matStartDate formControlName="dataInicio" placeholder="Início" />
+          <input matEndDate formControlName="dataFim" placeholder="Fim" />
+        </mat-date-range-input>
+        <mat-datepicker-toggle matIconSuffix [for]="pickerPeriodo" />
+        <mat-date-range-picker #pickerPeriodo />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>ID do cedente</mat-label>
+        <input matInput type="number" min="1" formControlName="cedenteId" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Moeda</mat-label>
+        <mat-select formControlName="sgMoeda">
+          <mat-option [value]="null">Todas</mat-option>
+          @for (moeda of moedas; track moeda) {
+            <mat-option [value]="moeda">{{ moeda }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <button matButton="filled" type="submit">
+        <mat-icon>filter_alt</mat-icon>
+        Filtrar
+      </button>
+      <button matButton type="button" (click)="limparFiltros()">Limpar</button>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+<mat-card class="card-tabela">
+  @if (service.carregando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <div class="rolagem">
+    <table mat-table [dataSource]="itens()" matSort (matSortChange)="mudarOrdenacao($event)">
+      <ng-container matColumnDef="dtLiquidacao">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Liquidação</th>
+        <td mat-cell *matCellDef="let item">
+          {{ item.dtLiquidacao | date: 'dd/MM/yyyy HH:mm' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="cedenteNome">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Cedente</th>
+        <td mat-cell *matCellDef="let item">
+          {{ item.cedenteNome }}
+          <span class="documento">{{ item.cedenteDocumento }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="nrTitulo">
+        <th mat-header-cell *matHeaderCellDef>Título</th>
+        <td mat-cell *matCellDef="let item">{{ item.nrTitulo }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="tipoRecebivel">
+        <th mat-header-cell *matHeaderCellDef>Tipo</th>
+        <td mat-cell *matCellDef="let item">{{ item.tipoRecebivel }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="dtVencimento">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Vencimento</th>
+        <td mat-cell *matCellDef="let item">{{ item.dtVencimento | date: 'dd/MM/yyyy' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="vlFace">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-valor">
+          Valor de face
+        </th>
+        <td mat-cell *matCellDef="let item" class="col-valor valor">
+          {{ item.vlFace | currency: item.sgMoedaOrigem }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="vlLiquido">
+        <th mat-header-cell *matHeaderCellDef class="col-valor">Valor líquido</th>
+        <td mat-cell *matCellDef="let item" class="col-valor valor">
+          {{ item.vlLiquido | currency: item.sgMoedaOrigem }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="vlSpread">
+        <th mat-header-cell *matHeaderCellDef class="col-valor">Spread</th>
+        <td mat-cell *matCellDef="let item" class="col-valor valor">
+          {{ item.vlSpread | currency: item.sgMoedaOrigem }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="vlLiquidado">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-valor">
+          Valor liquidado
+        </th>
+        <td mat-cell *matCellDef="let item" class="col-valor valor liquidado">
+          {{ item.vlLiquidado | currency: item.sgMoedaLiquidacao }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="sgMoedaLiquidacao">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Moeda</th>
+        <td mat-cell *matCellDef="let item">{{ item.sgMoedaLiquidacao }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="colunas"></tr>
+      <tr mat-row *matRowDef="let row; columns: colunas"></tr>
+
+      <tr class="mat-mdc-row sem-dados" *matNoDataRow>
+        <td class="mat-mdc-cell" [attr.colspan]="colunas.length">
+          Nenhuma liquidação encontrada para os filtros informados.
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <mat-paginator
+    [length]="totalElementos()"
+    [pageSize]="20"
+    [pageSizeOptions]="[10, 20, 50, 100]"
+    (page)="mudarPagina($event)"
+    showFirstLastButtons
+  />
+</mat-card>
